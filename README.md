@@ -1,151 +1,109 @@
-# Manifest Hub
+<div align="center">
+  <img src="assets/manifesthub.png" alt="Manifest Hub Logo" width="150"/>
+  <h1>Manifest Hub</h1>
+  <p><b>Web Application for Searching, Viewing, and Downloading Steam Manifests</b></p>
+  <p>
+    <img src="https://img.shields.io/badge/JavaScript-ES6%2B-F7DF1E?logo=javascript&logoColor=black" alt="JavaScript">
+    <img src="https://img.shields.io/badge/Platform-Web%20%7C%20PWA-blue" alt="Platform">
+    <img src="https://img.shields.io/badge/License-GPL--3.0-amber" alt="License">
+  </p>
+  <p>
+    <a href="https://manifesthub.trionine.com"><b>🌐 Live Website</b></a> •
+    <a href="https://github.com/sadabx/TOST"><b>🎮 TOST Desktop Companion</b></a>
+  </p>
+</div>
 
-A web application for searching, viewing, and downloading Steam manifests.
+## Index
 
-## About
+1. [What is Manifest Hub?](#what-is-manifest-hub)
+2. [Features](#features)
+3. [Getting Started](#getting-started)
+4. [Screenshots](#screenshots)
+5. [Data Sources](#data-sources)
+6. [Support](#support)
+7. [Credits](#credits)
 
-Manifest Hub allows users to search through game manifests, view manifest details, and download manifest archives sourced from GitHub repositories. It features user accounts, download history tracking, and a responsive design.
+## What is Manifest Hub?
+
+**Manifest Hub** is a lightweight, responsive web application for searching and downloading Steam game manifests, depot keys, and ready-to-use Lua injection scripts for SteamTools.
+
+Instead of scouring forums or dealing with dead links, Manifest Hub provides an all-in-one search catalog and download engine that pairs directly with **[TOST (Trionine Open Steam Tool)](https://github.com/sadabx/TOST)** and SteamTools.
+
+## Features
+
+### Core Search & Downloads
+- **Instant Search**: Search across 150,000+ Steam games, DLCs, and software with instant autocomplete.
+- **86,500+ Lua Scripts**: Pre-configured scripts with verified depot keys and DLC unlocks powered by KeySteam.
+- **Live Manifests**: Queries SteamCMD dynamically to fetch the latest public manifest GIDs in real time.
+- **ZIP Bundling**: Download individual `.manifest` / `.lua` files or click **Download All** for a single ZIP.
+- **Archive Fallbacks**: Automatic fallback to comprehensive manifest archives ([ManifestHub3](https://github.com/steamtools-games/ManifestHub3) & [ManifestHub2](https://github.com/SSMGAlt/ManifestHub2)).
+
+### User Features
+- **Personal History**: Optional account sync to keep track of your downloaded games.
+- **Community Forum & Polls**: Built-in discussion forum and voting polls.
+- **Fast & Private**: 100% client-side file resolution with no ads or bloatware.
+
+## Getting Started
+
+### Basic Usage
+1. Open **[Manifest Hub](https://manifesthub.trionine.com)**.
+2. Search for any game name or Steam App ID.
+3. Choose your file:
+   - **Lua Keys**: Pre-configured SteamTools injection script.
+   - **Manifest Files**: The official `.manifest` file for each depot.
+   - **Legacy Zip**: Full bundled archive from the manifest cache.
+4. Click **Download** or **Download All**.
+5. Drag and drop the downloaded files directly onto the floating **[TOST](https://github.com/sadabx/TOST)** icon or your SteamTools folder.
+6. Right-click the icon and choose **Apply OST** (Windows) or **Apply SLSsteam** (Linux) to activate.
 
 ## Screenshots
 
 <details>
 <summary>Click to expand screenshots</summary>
 
+### Homepage & Search
 ![Homepage](assets/screenshots/Screenshot_20260623_153129.png)
 
+### Game Details & File Panel
 ![Search Results](assets/screenshots/Screenshot_20260623_153230.png)
 
+### Legacy Archive Terminal
 ![Legacy Archive](assets/screenshots/Screenshot_20260623_153309.png)
 
+### User Download History
 ![User Download History](assets/screenshots/Screenshot_20260623_202028.png)
 
-![User Account Controls](assets/screenshots/Screenshot_20260623_201936.png)</details>
+### User Account Controls
+![User Account Controls](assets/screenshots/Screenshot_20260623_201936.png)
 
-## Usage
-
-1. Visit the [Manifest Hub website](https://manifesthub.trionine.com).
-2. Search for a game by name or AppID.
-3. Browse the listed manifest files and Lua depot keys.
-4. Click **Download** on any file, or **Download All** to get everything at once.
-
-You can also use the **Legacy Archive** mode to look up a specific AppID directly.
-
-## Project Structure
-
-The project is organized cleanly into the following folders and files:
-
-```text
-ManifestHub/
-├── .github/workflows/
-│   └── update-trending.yml    # Daily GitHub Action to roll up download events
-├── assets/
-│   ├── manifesthub.png        # Brand assets & logos
-│   ├── mhub.png
-│   └── screenshots/           # Reorganized documentation screenshots
-├── backend/
-│   ├── cloudflare-worker.js   # Cloudflare Worker bridge source code
-│   ├── download-events-rollup.sql # Safe Supabase migration for daily rollups
-│   ├── download-history-compact.sql # Safe migration to compact profile history
-│   ├── download-history.sql    # Full Supabase schema for fresh projects
-│   ├── manifesthub-record.gs  # Legacy Google Apps Script logger
-│   └── README.md              # Unified backend architecture & setup documentation
-├── data/
-│   ├── faq.js                 # Frequently Asked Questions native JS data array
-│   ├── download-counts.json   # Action-only permanent download counters
-│   ├── download-rollup-state.json # Last processed Supabase event timestamp
-│   └── trending-data.json     # Small public top downloads list used by the browser
-├── extras/
-│   ├── maindatabase.html      # Legacy database search view
-│   ├── oglegacy.html          # Original legacy app design fallback
-│   └── split_bloated_data.py  # Python utility for splitting large databases
-├── scripts/
-│   └── update-trending.js     # Rolls Supabase download events into JSON counters
-├── src/
-│   ├── core/                  # Configuration and framework-independent helpers
-│   ├── components/            # Shared auth, presence, poll, and FAQ behavior
-│   ├── pages/
-│   │   ├── database/          # Main database page controller and features
-│   │   ├── forum/             # Forum page controller
-│   │   └── profile/           # Profile page controller
-│   └── styles/
-│       ├── core/              # Reset, typography, colors, and base controls
-│       ├── shared/            # Shared navigation, modals, and UI components
-│       └── pages/             # Database, forum, profile, TOST, and error styles
-├── _headers                   # Netlify custom HTTP headers (Cache-Control)
-├── _redirects                 # Netlify clean URLs redirect mapping
-├── 404.html                   # 404 error page
-├── forum/index.html           # Community forum
-├── index.html                 # Main search and FAQ page
-├── profile/index.html         # User profile and download history
-└── tost/index.html            # TOST download page
-```
-
-See [`src/README.md`](src/README.md) for source ownership and script load
-order. The current build remains framework-free and deploys directly as static
-files.
-
-## Download Analytics
-
-Manifest Hub uses Supabase only as a short-term event buffer. The permanent download totals live in JSON files committed by GitHub Actions.
-
-```text
-Cloudflare Worker
-  └── writes each deduped download to Supabase download_events
-        ↓
-GitHub Action runs daily
-  ├── reads unprocessed Supabase events
-  ├── adds them to data/download-counts.json
-  ├── regenerates data/trending-data.json
-  ├── commits the JSON files
-  └── deletes the processed Supabase rows
-```
-
-The browser only fetches:
-
-```text
-/data/trending-data.json
-```
-
-It should never fetch `data/download-counts.json`; that file is the larger permanent counter used by the daily GitHub Action.
-
-### Supabase Setup
-
-For an existing Supabase project, run only:
-
-```text
-backend/download-events-rollup.sql
-backend/download-history-compact.sql
-```
-
-Do not run `backend/download-history.sql` on production unless you intentionally want to rebuild the whole schema, because it drops existing tables.
-
-`download-history-compact.sql` optimizes the profile history table by keeping one row per user/app/download type. Repeated downloads refresh the existing row timestamp instead of creating duplicate profile-history rows.
-
-GitHub Actions requires these repository secrets:
-
-```text
-SUPABASE_URL
-SUPABASE_SERVICE_ROLE_KEY
-```
+</details>
 
 ## Data Sources
 
-The platform aggregates data from multiple external sources to serve files dynamically:
+- **[bsinwhg/ManifestHubLua](https://github.com/bsinwhg/ManifestHubLua)**: KeySteam Lua database providing verified `.lua` scripts for 86,500+ games.
+- **[steamtools-games/ManifestHub3](https://github.com/steamtools-games/ManifestHub3)**: Primary manifest archive repository powering `steamtools.games`.
+- **[SSMGAlt/ManifestHub2](https://github.com/SSMGAlt/ManifestHub2)**: Secondary legacy archive repository fallback.
+- **[jsnli/steamappidlist](https://github.com/jsnli/steamappidlist)**: Master catalog mapping game names to Steam App IDs.
+- **[api.steamcmd.net](https://api.steamcmd.net/)**: Live depot metadata and latest manifest IDs.
+- **[qwe213312/k25FCdfEOoEJ42S6](https://github.com/qwe213312/k25FCdfEOoEJ42S6)**: Public manifest file storage.
 
-- **[jsnli/steamappidlist](https://github.com/jsnli/steamappidlist)**: Provides the main database mapping game names to Steam AppIDs.
-- **[api.steamcmd.net](https://api.steamcmd.net/)**: Queried dynamically to find the latest live `manifestId` for a game's depots.
-- **[fylsdy/ManifestHub](https://github.com/fylsdy/ManifestHub)**: Hosts `depotkeys.json`, which is used to dynamically generate the `.lua` configuration files locally in your browser.
-- **[qwe213312/k25FCdfEOoEJ42S6](https://github.com/qwe213312/k25FCdfEOoEJ42S6)**: A massive repository hosting the actual live `.manifest` files that are downloaded.
-- **[SSMGAlt/ManifestHub2](https://github.com/SSMGAlt/ManifestHub2)**: The legacy archive, where older static backups (ZIPs of manifests and lua files) are stored in branches named by AppID.
+## Support
+
+Bug reports and feature suggestions can be submitted via the [GitHub Issue Tracker](https://github.com/trionine/ManifestHub/issues).
 
 ## Credits
 
-- **Developer:** [TRIONINE](https://trionine.com)
+### Contributors
+- Developed and maintained by **[TRIONINE](https://trionine.com)**.
 
-## License
+### Upstream & Community
+- **[TOST](https://github.com/sadabx/TOST)**: Trionine Open Steam Tool companion desktop manager.
+- **KeySteam**: Lua key database maintained by *o四季映姬o*.
+- **SteamTools**: Open community manifest and Lua specifications.
 
-This project is licensed under the [GPL-3.0 License](LICENSE).
+### Disclaimer
+This project is provided for research and educational purposes only. Manifest Hub is an independent open-source web application and is not affiliated with, maintained, or endorsed by Valve, Steam, or SteamTools.
 
 ---
 
-This project is not affiliated with Valve or Steam.
+Distributed under the **GNU General Public License v3.0**. See the [LICENSE](LICENSE) file for details.

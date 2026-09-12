@@ -87,7 +87,7 @@ window.MH_initDatabase = async function (supabase) {
   }
 
   try {
-    const [depotKeysData, games, dlcs, sw, denuvoData] = await Promise.all([
+    const [depotKeysData, games, dlcs, sw, denuvoData, luaMapData] = await Promise.all([
       // Source: fylsdy/ManifestHub (optional: depot keys for local .lua generation)
       // If unavailable, the site remains operational for manifest downloads.
       fetchCachedJson(
@@ -102,13 +102,26 @@ window.MH_initDatabase = async function (supabase) {
       fetch("data/denuvo-games.json")
         .then((r) => r.json())
         .catch(() => []),
+      // Source: bsinwhg/ManifestHubLua (KeySteam Lua database index with 86,500+ games)
+      fetch("data/lua-map.json")
+        .then((r) => r.json())
+        .catch((err) => {
+          console.warn("Lua map index unavailable:", err);
+          return null;
+        }),
     ]);
 
     window.MH.depotKeys = depotKeysData || {};
     window.MH.depotKeysAvailable = Object.keys(window.MH.depotKeys).length > 0;
     window.MH.denuvoAppIds = new Set(denuvoData);
+    window.MH.luaMap = luaMapData || null;
+    window.MH.luaCount = (window.MH.luaMap && window.MH.luaMap.a)
+      ? Object.keys(window.MH.luaMap.a).length
+      : 0;
 
-    if (window.MH.depotKeysAvailable) {
+    if (window.MH.luaCount > 0) {
+      window.MH_updateStatus(`Loaded ${window.MH.luaCount.toLocaleString()} Lua scripts`);
+    } else if (window.MH.depotKeysAvailable) {
       window.MH_updateStatus(`Loaded ${Object.keys(window.MH.depotKeys).length} depot keys`);
     } else {
       window.MH_updateStatus("Loading game catalog (Lua database offline)...");
@@ -233,7 +246,9 @@ function buildMapping(supabase) {
     icon.style.color = "#3fb950";
   }
 
-  if (hasDepotKeys) {
+  if (window.MH.luaCount > 0) {
+    window.MH_updateStatus(`Ready! ${supported.toLocaleString()} games available (${window.MH.luaCount.toLocaleString()} Lua scripts ready).`);
+  } else if (hasDepotKeys) {
     window.MH_updateStatus(`Ready! ${supported.toLocaleString()} supported apps.`);
   } else {
     window.MH_updateStatus(`Ready! ${supported.toLocaleString()} games available (Lua keys offline).`);

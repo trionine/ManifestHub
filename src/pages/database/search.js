@@ -200,13 +200,31 @@ window.MH_displayGameFiles = async function (appId, gameName) {
 
   const files = [];
   const depots = window.MH.appDepots[appId] || [];
+  const appIdStr = appId.toString();
+  const luaMap = window.MH.luaMap;
   const hasDepotKeysDb = Boolean(
     window.MH.depotKeysAvailable &&
     window.MH.depotKeys &&
     Object.keys(window.MH.depotKeys).length > 0,
   );
 
-  if (hasDepotKeysDb && depots.length > 0) {
+  // 1. Check KeySteam Lua repository (bsinwhg/ManifestHubLua with 86,500+ games)
+  if (luaMap && luaMap.a && luaMap.a[appIdStr] !== undefined && luaMap.f) {
+    const folderIdx = luaMap.a[appIdStr];
+    const folderName = luaMap.f[folderIdx];
+    const luaUrl = `https://raw.githubusercontent.com/bsinwhg/ManifestHubLua/main/luas/${folderName}/${appIdStr}.lua`;
+    files.push({
+      name: `${appId}.lua`,
+      type: "Lua Keys",
+      size: "Verified",
+      icon: "fas fa-file-code",
+      iconColor: "text-green-400",
+      textColorStyle: "color: #4ade80;",
+      url: luaUrl,
+      isExternal: true,
+      includeInBundle: true,
+    });
+  } else if (hasDepotKeysDb && depots.length > 0) {
     const luaResult = generateLuaContent(appId, depots);
     if (luaResult.count > 0) {
       const luaBlob = new Blob([luaResult.content], { type: "text/plain" });
@@ -220,6 +238,7 @@ window.MH_displayGameFiles = async function (appId, gameName) {
         textColorStyle: "color: #4ade80;",
         url: luaUrl,
         blob: luaBlob,
+        includeInBundle: true,
       });
     } else {
       files.push({
@@ -235,16 +254,16 @@ window.MH_displayGameFiles = async function (appId, gameName) {
       });
     }
   } else {
-    // Lua keys database is down or offline
+    // Lua keys not found in database
     files.push({
       name: `${appId}.lua`,
       type: "Lua Keys",
-      size: "Offline",
+      size: "Unavailable",
       icon: "fas fa-file-code",
       iconColor: "text-github-muted",
       textColorStyle: "color: #8b949e;",
       disabled: true,
-      disabledTooltip: "Lua database is down",
+      disabledTooltip: "No Lua script available for this game",
       includeInBundle: false,
     });
   }
@@ -269,21 +288,34 @@ window.MH_displayGameFiles = async function (appId, gameName) {
   }
 
   try {
-    // Source: SSMGAlt/ManifestHub2 (Legacy Archive)
-    // Purpose: Checks if a legacy branch named by AppID exists.
-    const githubCheck = await fetch(
-      `https://api.github.com/repos/${REPO_OWNER}/ManifestHub2/branches/${appId}`,
-    );
-    if (githubCheck.status === 200) {
+    // Check available archives: steamtools-games/ManifestHub3 (August 2026 update) -> SSMGAlt/ManifestHub2
+    // using raw GitHub content checks (avoids 60 req/hr API rate limits)
+    let archiveRepo = null;
+    const mh3Check = await fetch(
+      `https://raw.githubusercontent.com/steamtools-games/ManifestHub3/${appId}/${appId}.lua`,
+      { method: "GET" },
+    ).catch(() => null);
+
+    if (mh3Check && mh3Check.status === 200) {
+      archiveRepo = "steamtools-games/ManifestHub3";
+    } else {
+      const mh2Check = await fetch(
+        `https://raw.githubusercontent.com/SSMGAlt/ManifestHub2/${appId}/${appId}.lua`,
+        { method: "GET" },
+      ).catch(() => null);
+      if (mh2Check && mh2Check.status === 200) {
+        archiveRepo = "SSMGAlt/ManifestHub2";
+      }
+    }
+
+    if (archiveRepo) {
       files.push({
         name: `${appId}.zip`,
         type: "Legacy Zip",
         icon: "fas fa-file-zipper",
         iconColor: "text-purple-400",
         textColorStyle: "color: #c084fc;",
-        // Source: SSMGAlt/ManifestHub2 (Legacy Archive)
-        // Purpose: Direct URL to download the branch as a ZIP file.
-        url: `https://codeload.github.com/${REPO_OWNER}/ManifestHub2/zip/refs/heads/${appId}`,
+        url: `https://codeload.github.com/${archiveRepo}/zip/refs/heads/${appId}`,
         isExternal: true,
         includeInBundle: false,
       });
@@ -359,6 +391,24 @@ window.MH_displayGameFiles = async function (appId, gameName) {
       `;
       fileDiv.querySelector(".download-btn").addEventListener("click", () => {
         trackEvent(appId, `${gameName} - ${file.type}`);
+        if (file.url && file.name.endsWith(".lua") && file.isExternal) {
+          fetch(file.url)
+            .then((r) => r.blob())
+            .then((blob) => {
+              const blobUrl = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = blobUrl;
+              a.download = file.name;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+            })
+            .catch(() => {
+              window.open(file.url, "_blank");
+            });
+          return;
+        }
         const a = document.createElement("a");
         a.href = file.url;
         a.download = file.name;
@@ -506,17 +556,29 @@ function initLegacyCheck() {
     await typeLegacyText(`> Searching GitHub repository...\n`);
 
     try {
-      // Source: SSMGAlt/ManifestHub2 (Legacy Archive)
-      // Purpose: Checks if the branch exists for the requested Legacy AppID.
-      const response = await fetch(
-        `https://api.github.com/repos/${REPO_OWNER}/ManifestHub2/branches/${gameId}`,
-      );
-      if (response.status === 200) {
+      // Check archives: steamtools-games/ManifestHub3 (newer) -> SSMGAlt/ManifestHub2
+      let archiveRepo = null;
+      const r1 = await fetch(
+        `https://raw.githubusercontent.com/steamtools-games/ManifestHub3/${gameId}/${gameId}.lua`,
+        { method: "GET" },
+      ).catch(() => null);
+
+      if (r1 && r1.status === 200) {
+        archiveRepo = "steamtools-games/ManifestHub3";
+      } else {
+        const r2 = await fetch(
+          `https://raw.githubusercontent.com/SSMGAlt/ManifestHub2/${gameId}/${gameId}.lua`,
+          { method: "GET" },
+        ).catch(() => null);
+        if (r2 && r2.status === 200) {
+          archiveRepo = "SSMGAlt/ManifestHub2";
+        }
+      }
+
+      if (archiveRepo) {
         await typeLegacyText(`> ✅ Manifest found in database!\n`);
         const gameName = window.MH.appNames[parseInt(gameId)] || "Unknown Game";
-        // Source: SSMGAlt/ManifestHub2 (Legacy Archive)
-        // Purpose: URL to download the specific legacy archive zip.
-        const githubUrl = `https://codeload.github.com/${REPO_OWNER}/ManifestHub2/zip/refs/heads/${gameId}`;
+        const githubUrl = `https://codeload.github.com/${archiveRepo}/zip/refs/heads/${gameId}`;
 
         const dl = document.getElementById("legacyDownloadLink");
         dl.href = githubUrl;
