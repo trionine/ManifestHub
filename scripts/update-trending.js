@@ -1,3 +1,10 @@
+// =============================================================================
+// update-trending.js
+// NOTE: This rollup script is currently DISABLED / INACTIVE.
+// Download counting via Supabase is disabled; downloads are tracked directly
+// through Discord webhooks. This script and data files are retained for reference.
+// =============================================================================
+
 const fs = require("fs");
 const path = require("path");
 

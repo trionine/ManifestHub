@@ -1,9 +1,15 @@
+# =============================================================================
+# DISABLED: Automated download rollup workflow is currently disabled.
+# Download activity is tracked directly via Discord webhooks.
+# To re-enable automatic runs, uncomment the schedule trigger below.
+# =============================================================================
+
 name: Roll Up Daily Downloads
 
 on:
-  schedule:
-    - cron: '18 16 */3 * *' # Every 3 days at 10:18 PM Asia/Dhaka / 16:18 UTC
-  workflow_dispatch: # Allows manual trigger
+  # schedule:
+  #   - cron: '18 16 */3 * *' # Every 3 days at 10:18 PM Asia/Dhaka / 16:18 UTC
+  workflow_dispatch: # Allows manual trigger if needed
 
 jobs:
   rollup-downloads:

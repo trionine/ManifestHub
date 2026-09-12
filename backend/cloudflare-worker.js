@@ -1,3 +1,9 @@
+// =============================================================================
+// Cloudflare Worker Bridge for ManifestHub
+// NOTE: Supabase download_events tracking is DISABLED.
+// Game download notifications are dispatched directly to Discord via webhooks.
+// =============================================================================
+
 export default {
   async fetch(request, env, ctx) {
     const headers = {
@@ -104,26 +110,7 @@ export default {
           }
         }
 
-        // 2. Write global temporary event row for the daily JSON rollup.
-        try {
-          await fetch(`${sbUrl}/rest/v1/download_events`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${sbKey}`,
-              apikey: sbKey,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              app_id: parseInt(downloadId),
-              download_type: downloadType,
-              game_name: gameName,
-            }),
-          });
-        } catch (e) {
-          console.error("Download event insert failed:", e);
-        }
-
-        // 3. Write personal history row into public.download_history (logged-in users only).
+        // 2. Write personal history row into public.download_history (logged-in users only).
         if (userId) {
           try {
             await fetch(`${sbUrl}/rest/v1/download_history`, {
