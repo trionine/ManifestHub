@@ -73,8 +73,8 @@ window.MH_initDatabase = async function (supabase) {
     // Source: jsnli/steamappidlist
     // Purpose: Main database to map game names to Steam AppIDs for lookup.
     const bases = [
-      "https://raw.githubusercontent.com/jsnli/steamappidlist/refs/heads/main/data/",
       "https://raw.githubusercontent.com/jsnli/steamappidlist/refs/heads/master/data/",
+      "https://raw.githubusercontent.com/jsnli/steamappidlist/refs/heads/main/data/",
     ];
     for (const base of bases) {
       try {
@@ -88,11 +88,14 @@ window.MH_initDatabase = async function (supabase) {
 
   try {
     const [depotKeysData, games, dlcs, sw, denuvoData] = await Promise.all([
-      // Source: fylsdy/ManifestHub
-      // Purpose: Downloads depot keys to locally generate the .lua files.
+      // Source: fylsdy/ManifestHub (optional: depot keys for local .lua generation)
+      // If unavailable, the site remains operational for manifest downloads.
       fetchCachedJson(
         "https://raw.githubusercontent.com/fylsdy/ManifestHub/main/depotkeys.json",
-      ),
+      ).catch((err) => {
+        console.warn("Depot keys database unavailable (fylsdy repository unreachable):", err);
+        return {};
+      }),
       fetchWithFallback("games_appid.json"),
       fetchWithFallback("dlc_appid.json"),
       fetchWithFallback("software_appid.json"),
@@ -101,9 +104,15 @@ window.MH_initDatabase = async function (supabase) {
         .catch(() => []),
     ]);
 
-    window.MH.depotKeys = depotKeysData;
+    window.MH.depotKeys = depotKeysData || {};
+    window.MH.depotKeysAvailable = Object.keys(window.MH.depotKeys).length > 0;
     window.MH.denuvoAppIds = new Set(denuvoData);
-    window.MH_updateStatus(`Loaded ${Object.keys(window.MH.depotKeys).length} depot keys`);
+
+    if (window.MH.depotKeysAvailable) {
+      window.MH_updateStatus(`Loaded ${Object.keys(window.MH.depotKeys).length} depot keys`);
+    } else {
+      window.MH_updateStatus("Loading game catalog (Lua database offline)...");
+    }
 
     games.forEach((app) => {
       window.MH.appNames[app.appid] = app.name;
@@ -139,7 +148,8 @@ window.MH_initDatabase = async function (supabase) {
 function buildMapping(supabase) {
   window.MH_updateStatus("Building app mapping...");
   const appNames = window.MH.appNames;
-  const depotKeys = window.MH.depotKeys;
+  const depotKeys = window.MH.depotKeys || {};
+  const hasDepotKeys = Boolean(window.MH.depotKeysAvailable && Object.keys(depotKeys).length > 0);
 
   // Max numeric distance between a depot ID and its parent AppID in the Steam catalog.
   // Steam depot IDs are always numerically close to their parent AppID (empirically within 100).
@@ -149,30 +159,32 @@ function buildMapping(supabase) {
     .sort((a, b) => a - b);
   const raw = {};
 
-  Object.keys(depotKeys).forEach((depotStr) => {
-    const depotId = parseInt(depotStr);
-    let left = 0,
-      right = sortedAppids.length - 1;
-    while (left <= right) {
-      const mid = Math.floor((left + right) / 2);
-      if (sortedAppids[mid] < depotId) left = mid + 1;
-      else right = mid - 1;
-    }
-    if (left < sortedAppids.length) {
-      const appId = sortedAppids[left];
-      if (appId - depotId <= DEPOT_MAP_MAX_DISTANCE && appId >= depotId) {
-        if (!raw[appId]) raw[appId] = new Set();
-        raw[appId].add(depotId);
+  if (hasDepotKeys) {
+    Object.keys(depotKeys).forEach((depotStr) => {
+      const depotId = parseInt(depotStr);
+      let left = 0,
+        right = sortedAppids.length - 1;
+      while (left <= right) {
+        const mid = Math.floor((left + right) / 2);
+        if (sortedAppids[mid] < depotId) left = mid + 1;
+        else right = mid - 1;
       }
-    }
-    if (right >= 0) {
-      const appId = sortedAppids[right];
-      if (depotId - appId <= DEPOT_MAP_MAX_DISTANCE && depotId >= appId) {
-        if (!raw[appId]) raw[appId] = new Set();
-        raw[appId].add(depotId);
+      if (left < sortedAppids.length) {
+        const appId = sortedAppids[left];
+        if (appId - depotId <= DEPOT_MAP_MAX_DISTANCE && appId >= depotId) {
+          if (!raw[appId]) raw[appId] = new Set();
+          raw[appId].add(depotId);
+        }
       }
-    }
-  });
+      if (right >= 0) {
+        const appId = sortedAppids[right];
+        if (depotId - appId <= DEPOT_MAP_MAX_DISTANCE && depotId >= appId) {
+          if (!raw[appId]) raw[appId] = new Set();
+          raw[appId].add(depotId);
+        }
+      }
+    });
+  }
 
   window.MH.appDepots = {};
   Object.keys(raw).forEach((appIdStr) => {
@@ -182,15 +194,29 @@ function buildMapping(supabase) {
     }
   });
 
-  window.MH.searchable = Object.keys(window.MH.appDepots)
-    .map((appId) => parseInt(appId))
-    .sort((a, b) => a - b)
-    .map((appId) => ({
-      appId,
-      name: appNames[appId],
-      nameLower: appNames[appId].toLowerCase(),
-      appIdStr: appId.toString(),
-    }));
+  const depotAppIds = Object.keys(window.MH.appDepots);
+  if (depotAppIds.length > 0) {
+    window.MH.searchable = depotAppIds
+      .map((appId) => parseInt(appId))
+      .sort((a, b) => a - b)
+      .map((appId) => ({
+        appId,
+        name: appNames[appId],
+        nameLower: appNames[appId].toLowerCase(),
+        appIdStr: appId.toString(),
+      }));
+  } else {
+    // If depotKeys is unavailable or empty, populate searchable catalog from all known games
+    window.MH.searchable = Object.keys(appNames)
+      .map((appId) => parseInt(appId))
+      .sort((a, b) => a - b)
+      .map((appId) => ({
+        appId,
+        name: appNames[appId],
+        nameLower: appNames[appId].toLowerCase(),
+        appIdStr: appId.toString(),
+      }));
+  }
 
   const supported = window.MH.searchable.length;
 
@@ -206,7 +232,12 @@ function buildMapping(supabase) {
     icon.className = "fas fa-check mr-2";
     icon.style.color = "#3fb950";
   }
-  window.MH_updateStatus(`Ready! ${supported.toLocaleString()} supported apps.`);
+
+  if (hasDepotKeys) {
+    window.MH_updateStatus(`Ready! ${supported.toLocaleString()} supported apps.`);
+  } else {
+    window.MH_updateStatus(`Ready! ${supported.toLocaleString()} games available (Lua keys offline).`);
+  }
   window.MH_startStatusAnnouncementCarousel(supported, supabase);
 
   // Handle URL query parameters for search routing

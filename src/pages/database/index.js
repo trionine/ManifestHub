@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
     appTypes: {},
     appDepots: {},
     depotKeys: {},
+    depotKeysAvailable: false,
     searchable: [],
     denuvoAppIds: new Set(),
     _authMode: "login",

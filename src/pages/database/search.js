@@ -200,8 +200,13 @@ window.MH_displayGameFiles = async function (appId, gameName) {
 
   const files = [];
   const depots = window.MH.appDepots[appId] || [];
+  const hasDepotKeysDb = Boolean(
+    window.MH.depotKeysAvailable &&
+    window.MH.depotKeys &&
+    Object.keys(window.MH.depotKeys).length > 0,
+  );
 
-  if (depots.length > 0) {
+  if (hasDepotKeysDb && depots.length > 0) {
     const luaResult = generateLuaContent(appId, depots);
     if (luaResult.count > 0) {
       const luaBlob = new Blob([luaResult.content], { type: "text/plain" });
@@ -216,7 +221,32 @@ window.MH_displayGameFiles = async function (appId, gameName) {
         url: luaUrl,
         blob: luaBlob,
       });
+    } else {
+      files.push({
+        name: `${appId}.lua`,
+        type: "Lua Keys",
+        size: "Unavailable",
+        icon: "fas fa-file-code",
+        iconColor: "text-github-muted",
+        textColorStyle: "color: #8b949e;",
+        disabled: true,
+        disabledTooltip: "No Lua keys available for this game",
+        includeInBundle: false,
+      });
     }
+  } else {
+    // Lua keys database is down or offline
+    files.push({
+      name: `${appId}.lua`,
+      type: "Lua Keys",
+      size: "Offline",
+      icon: "fas fa-file-code",
+      iconColor: "text-github-muted",
+      textColorStyle: "color: #8b949e;",
+      disabled: true,
+      disabledTooltip: "Lua database is down",
+      includeInBundle: false,
+    });
   }
 
   const { manifests: liveManifests, unavailableCount } =
@@ -260,18 +290,9 @@ window.MH_displayGameFiles = async function (appId, gameName) {
     }
   } catch (e) { }
 
-  if (files.length === 0) {
-    filesList.innerHTML = unavailableCount
-      ? '<div class="text-center py-4 text-github-muted"><strong>No verified downloads are available on ManifestHub for this game yet.</strong><br>The current Steam manifest is known, but our sources do not have the matching manifest file and depot key needed to create a working package. Please check again after the database updates.</div>'
-      : '<div class="text-center py-4 text-github-muted">No files available for this game yet.</div>';
-    document.getElementById("downloadAllZipBtn").classList.add("hidden");
-    document.getElementById("toggleOlderManifestsBtn")?.classList.add("hidden");
-    currentFiles = [];
-    return;
-  }
-
-  const olderFilesCount = files.filter((f) => f.isOlder).length;
-  const hasLivePublic = files.some((f) => f.isLatest);
+  const availableDownloadFiles = files.filter((f) => !f.disabled);
+  const olderFilesCount = availableDownloadFiles.filter((f) => f.isOlder).length;
+  const hasLivePublic = availableDownloadFiles.some((f) => f.isLatest);
   if (!hasLivePublic && olderFilesCount > 0) {
     showOlderManifests = true;
   }
@@ -292,7 +313,7 @@ window.MH_displayGameFiles = async function (appId, gameName) {
       updateOlderManifestsToggleState(olderItems.length);
       // Update the bundle to include/exclude older manifests
       currentFiles = files.filter(
-        (file) => file.includeInBundle !== false && (!file.isOlder || showOlderManifests),
+        (file) => !file.disabled && file.includeInBundle !== false && (!file.isOlder || showOlderManifests),
       );
     });
   }
@@ -308,30 +329,56 @@ window.MH_displayGameFiles = async function (appId, gameName) {
       : "file-item";
     const nameToShow = file.displayName || file.name;
     const styleAttr = file.textColorStyle ? ` style="${file.textColorStyle}"` : "";
-    fileDiv.innerHTML = `
-      <div class="file-info">
-        <i class="${file.icon} ${file.iconColor} file-icon"></i>
-        <div class="file-details">
-          <span class="file-name"${styleAttr}>${window.escapeHtml(nameToShow)}</span>
-          <span class="file-meta">${file.type}${file.size ? ` · ${file.size}` : ""}</span>
+
+    if (file.disabled) {
+      const tooltip = file.disabledTooltip || "Lua database is down";
+      fileDiv.innerHTML = `
+        <div class="file-info">
+          <i class="${file.icon} ${file.iconColor} file-icon"></i>
+          <div class="file-details">
+            <span class="file-name"${styleAttr}>${window.escapeHtml(nameToShow)}</span>
+            <span class="file-meta">${file.type}${file.size ? ` · ${file.size}` : ""}</span>
+          </div>
         </div>
-      </div>
-      <button class="download-btn"><i class="fas fa-download mr-1"></i> Download</button>
-    `;
-    fileDiv.querySelector(".download-btn").addEventListener("click", () => {
-      trackEvent(appId, `${gameName} - ${file.type}`);
-      const a = document.createElement("a");
-      a.href = file.url;
-      a.download = file.name;
-      if (file.isExternal) a.target = "_blank";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    });
+        <div title="${window.escapeHtml(tooltip)}" style="display: inline-block; cursor: not-allowed;">
+          <button class="download-btn" disabled style="opacity: 0.5; pointer-events: none; cursor: not-allowed;">
+            <i class="fas fa-ban mr-1"></i> Disabled
+          </button>
+        </div>
+      `;
+    } else {
+      fileDiv.innerHTML = `
+        <div class="file-info">
+          <i class="${file.icon} ${file.iconColor} file-icon"></i>
+          <div class="file-details">
+            <span class="file-name"${styleAttr}>${window.escapeHtml(nameToShow)}</span>
+            <span class="file-meta">${file.type}${file.size ? ` · ${file.size}` : ""}</span>
+          </div>
+        </div>
+        <button class="download-btn"><i class="fas fa-download mr-1"></i> Download</button>
+      `;
+      fileDiv.querySelector(".download-btn").addEventListener("click", () => {
+        trackEvent(appId, `${gameName} - ${file.type}`);
+        const a = document.createElement("a");
+        a.href = file.url;
+        a.download = file.name;
+        if (file.isExternal) a.target = "_blank";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      });
+    }
     filesList.appendChild(fileDiv);
   });
 
-  if (unavailableCount) {
+  if (availableDownloadFiles.length === 0) {
+    const notice = document.createElement("div");
+    notice.className = "text-center py-4 text-github-muted";
+    notice.innerHTML = unavailableCount
+      ? `<strong>No verified manifest downloads are available on ManifestHub for this game yet.</strong><br>The current Steam manifest is known, but our sources do not have the matching manifest file. Please check back later.`
+      : `No downloadable manifest files or legacy archives are currently available for this game.`;
+    filesList.appendChild(notice);
+  } else if (unavailableCount) {
     const notice = document.createElement("div");
     notice.className = "text-center py-4 text-github-muted";
     notice.textContent = `${unavailableCount} current manifest file${unavailableCount === 1 ? " is" : "s are"
@@ -341,7 +388,7 @@ window.MH_displayGameFiles = async function (appId, gameName) {
 
   // Exclude older hidden manifests and legacy zip from the Download All bundle
   currentFiles = files.filter(
-    (file) => file.includeInBundle !== false && (!file.isOlder || showOlderManifests),
+    (file) => !file.disabled && file.includeInBundle !== false && (!file.isOlder || showOlderManifests),
   );
   document
     .getElementById("downloadAllZipBtn")
@@ -529,6 +576,9 @@ window.MH_initSearch = function () {
       legacyCheckBtn.classList.remove("hidden");
       searchIcon.className = "fas fa-archive text-purple-400";
       mainSearchInput.classList.add("rounded-r-none");
+      mainSearchInput.disabled = false;
+      mainSearchInput.style.opacity = "1";
+      mainSearchInput.style.cursor = "";
     }
   });
 
@@ -554,6 +604,9 @@ window.MH_initSearch = function () {
         const name = item.name;
         const type = window.MH.appTypes[appId] || "game";
         const depotCount = (window.MH.appDepots[appId] || []).length;
+        const depotBadge = depotCount > 0
+          ? `<span class="badge badge-depot">${depotCount} depot${depotCount !== 1 ? "s" : ""}</span>`
+          : "";
 
         const div = document.createElement("div");
         div.className = "result-item";
@@ -563,7 +616,7 @@ window.MH_initSearch = function () {
             <strong>${window.escapeHtml(name)}</strong>
             <div class="result-sub">
               <span class="badge badge-${type}">${type}</span>
-              <span class="badge badge-depot">${depotCount} depot${depotCount !== 1 ? "s" : ""}</span>
+              ${depotBadge}
               <span>AppID ${appId}</span>
             </div>
           </div>
