@@ -69,6 +69,21 @@ window.MH_loadTrendingDownloads = async function () {
 
       grid.appendChild(card);
     });
+
+    const syncTrendingHeight = () => {
+      const panel = document.getElementById("trendingPanel");
+      const column = document.querySelector(".main-content-column");
+      if (panel && column && window.innerWidth >= 1200) {
+        const h = panel.offsetHeight;
+        if (h > 0) {
+          column.style.minHeight = Math.max(h + 20, 880) + "px";
+        }
+      } else if (column) {
+        column.style.minHeight = "";
+      }
+    };
+    requestAnimationFrame(syncTrendingHeight);
+    window.addEventListener("resize", syncTrendingHeight, { passive: true });
   } catch (err) {
     console.warn("Failed to load trending downloads:", err);
     grid.innerHTML =

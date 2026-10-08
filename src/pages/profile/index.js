@@ -522,6 +522,10 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!error && data) {
           document.getElementById("adminTabBtn")?.classList.remove("hidden");
           setupAdminPanel(user);
+          const tabParam = new URLSearchParams(window.location.search).get("tab");
+          if (window.location.hash === "#admin" || tabParam === "admin") {
+            document.getElementById("adminTabBtn")?.click();
+          }
         } else {
           document.getElementById("adminTabBtn")?.classList.add("hidden");
         }
@@ -777,6 +781,8 @@ document.addEventListener("DOMContentLoaded", function () {
       // Load initially
       loadAdminPolls();
     }
+
+    setupFaqManager();
   }
 
   async function loadAnnouncements() {
@@ -818,13 +824,17 @@ document.addEventListener("DOMContentLoaded", function () {
           <div class="ann-item-expiry">${expiryLabel}</div>
         </div>
         <div class="ann-actions-wrap">
+          <label class="admin-toggle-switch" title="${ann.is_active ? "Active (visible on site) — click to deactivate" : "Inactive (hidden on site) — click to activate"}">
+            <input type="checkbox" class="ann-toggle-input" ${ann.is_active ? "checked" : ""} data-id="${ann.id}">
+            <span class="admin-toggle-slider">
+              <i class="fas fa-check admin-toggle-icon-on"></i>
+              <i class="fas fa-times admin-toggle-icon-off"></i>
+            </span>
+          </label>
           <button class="edit-ann-btn btn-secondary ann-action-btn-small" data-id="${ann.id}" title="Edit announcement">
             <i class="fas fa-edit"></i>
           </button>
-          <button class="toggle-active-btn btn-secondary ann-action-btn-small" data-id="${ann.id}" data-active="${ann.is_active}">
-            ${ann.is_active ? '<i class="fas fa-eye"></i> Active' : '<i class="fas fa-eye-slash"></i> Inactive'}
-          </button>
-          <button class="delete-ann-btn btn-danger ann-action-btn-small" data-id="${ann.id}">
+          <button class="delete-ann-btn btn-danger ann-action-btn-small" data-id="${ann.id}" title="Delete announcement">
             <i class="fas fa-trash-alt"></i>
           </button>
         </div>
@@ -868,11 +878,11 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>
           </div>
           <div class="ann-actions-wrap">
-            <button class="save-ann-btn btn-primary ann-action-btn-small" data-id="${ann.id}">
-              <i class="fas fa-check"></i> Save
+            <button class="save-ann-btn btn-primary ann-action-btn-small" data-id="${ann.id}" title="Save">
+              <i class="fas fa-check"></i>
             </button>
-            <button class="cancel-ann-btn btn-secondary ann-action-btn-small" data-id="${ann.id}">
-              <i class="fas fa-times"></i> Cancel
+            <button class="cancel-ann-btn btn-secondary ann-action-btn-small" data-id="${ann.id}" title="Cancel">
+              <i class="fas fa-times"></i>
             </button>
           </div>
         `;
@@ -940,7 +950,7 @@ document.addEventListener("DOMContentLoaded", function () {
                   "error",
                 );
                 e.currentTarget.disabled = false;
-                e.currentTarget.innerHTML = '<i class="fas fa-check"></i> Save';
+                e.currentTarget.innerHTML = '<i class="fas fa-check"></i>';
                 return;
               }
             }
@@ -956,7 +966,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 "error",
               );
               e.currentTarget.disabled = false;
-              e.currentTarget.innerHTML = '<i class="fas fa-check"></i> Save';
+              e.currentTarget.innerHTML = '<i class="fas fa-check"></i>';
             } else {
               showToast("Announcement updated successfully!");
               loadAnnouncements();
@@ -966,21 +976,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Toggle active status
       div
-        .querySelector(".toggle-active-btn")
-        .addEventListener("click", async (e) => {
-          const id = e.currentTarget.dataset.id;
-          const currentActive = e.currentTarget.dataset.active === "true";
-          e.currentTarget.disabled = true;
+        .querySelector(".ann-toggle-input")
+        .addEventListener("change", async (e) => {
+          const id = e.target.dataset.id;
+          const newActive = e.target.checked;
 
           const { error } = await supabase
             .from("announcements")
-            .update({ is_active: !currentActive })
+            .update({ is_active: newActive })
             .eq("id", id);
 
           if (error) {
             showToast("Failed to toggle status: " + error.message, "error");
-            e.currentTarget.disabled = false;
+            e.target.checked = !newActive;
           } else {
+            showToast(newActive ? "Announcement activated!" : "Announcement deactivated!");
             loadAnnouncements();
           }
         });
@@ -1088,24 +1098,91 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>
           </div>
           <div class="admin-poll-actions">
-            <button class="toggle-poll-btn btn-secondary poll-action-btn-small" data-id="${poll.id}" data-active="${poll.is_active}">
-              ${poll.is_active ? "Close" : "Activate"}
+            <label class="admin-toggle-switch" title="${poll.is_active ? "Active — click to close" : "Closed — click to activate"}">
+              <input type="checkbox" class="poll-toggle-input" ${poll.is_active ? "checked" : ""} data-id="${poll.id}">
+              <span class="admin-toggle-slider">
+                <i class="fas fa-check admin-toggle-icon-on"></i>
+                <i class="fas fa-times admin-toggle-icon-off"></i>
+              </span>
+            </label>
+            <button class="edit-poll-btn btn-secondary poll-action-btn-small" data-id="${poll.id}" title="Edit Poll">
+              <i class="fas fa-edit"></i>
             </button>
-            <button class="delete-poll-btn btn-danger poll-action-btn-small" data-id="${poll.id}">
-              Delete
+            <button class="delete-poll-btn btn-danger poll-action-btn-small" data-id="${poll.id}" title="Delete Poll">
+              <i class="fas fa-trash-alt"></i>
             </button>
           </div>
         `;
 
+        // Edit poll inline
+        div.querySelector(".edit-poll-btn").addEventListener("click", () => {
+          const currentOptionsStr = Array.isArray(poll.options)
+            ? poll.options.join(", ")
+            : "";
+          div.innerHTML = `
+            <div class="poll-edit-form-wrap">
+              <input type="text" class="poll-edit-input edit-poll-question-input" value="${window.escapeHtml(poll.question)}" placeholder="Poll question" required />
+              <input type="text" class="poll-edit-input edit-poll-options-input" value="${window.escapeHtml(currentOptionsStr)}" placeholder="Options (comma-separated, e.g. Yes, No)" required />
+            </div>
+            <div class="admin-poll-actions">
+              <button class="save-poll-btn btn-primary poll-action-btn-small" data-id="${poll.id}" title="Save">
+                <i class="fas fa-check"></i>
+              </button>
+              <button class="cancel-poll-btn btn-secondary poll-action-btn-small" data-id="${poll.id}" title="Cancel">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          `;
+
+          div.querySelector(".cancel-poll-btn").addEventListener("click", () => {
+            loadAdminPolls();
+          });
+
+          div.querySelector(".save-poll-btn").addEventListener("click", async (e) => {
+            const newQuestion = div.querySelector(".edit-poll-question-input").value.trim();
+            const rawOptions = div.querySelector(".edit-poll-options-input").value;
+            const newOptions = rawOptions
+              .split(",")
+              .map((opt) => opt.trim())
+              .filter((opt) => opt.length > 0);
+
+            if (!newQuestion) {
+              showToast("Question cannot be empty.", "error");
+              return;
+            }
+            if (newOptions.length < 2) {
+              showToast("Please provide at least 2 options.", "error");
+              return;
+            }
+
+            e.currentTarget.disabled = true;
+            e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            const { error: updateError } = await supabase
+              .from("polls")
+              .update({
+                question: newQuestion,
+                options: newOptions,
+              })
+              .eq("id", poll.id);
+
+            if (updateError) {
+              showToast("Failed to update poll: " + updateError.message, "error");
+              e.currentTarget.disabled = false;
+              e.currentTarget.innerHTML = '<i class="fas fa-check"></i>';
+            } else {
+              showToast("Poll updated successfully!");
+              loadAdminPolls();
+            }
+          });
+        });
+
         // Toggle active status
         div
-          .querySelector(".toggle-poll-btn")
-          .addEventListener("click", async (e) => {
-            const id = e.currentTarget.dataset.id;
-            const isCurrentlyActive = e.currentTarget.dataset.active === "true";
-            e.currentTarget.disabled = true;
-
-            const newActiveState = !isCurrentlyActive;
+          .querySelector(".poll-toggle-input")
+          .addEventListener("change", async (e) => {
+            const id = e.target.dataset.id;
+            const newActiveState = e.target.checked;
 
             // If turning active, deactivate all other polls first
             if (newActiveState) {
@@ -1129,7 +1206,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 "Failed to toggle status: " + activeError.message,
                 "error",
               );
-              e.currentTarget.disabled = false;
+              e.target.checked = !newActiveState;
             } else {
               showToast(newActiveState ? "Poll activated!" : "Poll closed!");
               loadAdminPolls();
@@ -1165,5 +1242,392 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // ===== FAQ MANAGER =====
+  function setupFaqManager() {
+    const faqForm = document.getElementById("adminFaqForm");
+    const faqListEl = document.getElementById("adminFaqList");
+    const faqCountEl = document.getElementById("faqCount");
+    if (!faqForm || !faqListEl) return;
+
+    // Clone form node to clear existing listeners
+    const newFaqForm = faqForm.cloneNode(true);
+    faqForm.parentNode.replaceChild(newFaqForm, faqForm);
+
+    const questionInput = newFaqForm.querySelector("#faqQuestionInput");
+    const answerInput = newFaqForm.querySelector("#faqAnswerInput");
+    const editIndexInput = newFaqForm.querySelector("#faqEditIndex");
+    const submitBtn = newFaqForm.querySelector("#faqSubmitBtn");
+    const submitText = newFaqForm.querySelector("#faqSubmitText");
+    const cancelEditBtn = newFaqForm.querySelector("#faqCancelEditBtn");
+    const resetDefaultsBtn = newFaqForm.querySelector("#faqResetDefaultsBtn");
+
+    const faqPermanent = newFaqForm.querySelector("#faqPermanent");
+    const faqDurationInputs = newFaqForm.querySelector("#faqDurationInputs");
+    const faqDays = newFaqForm.querySelector("#faqDays");
+    const faqHours = newFaqForm.querySelector("#faqHours");
+    const faqMins = newFaqForm.querySelector("#faqMins");
+
+    // Auto-adjusting textarea height
+    function autoResizeAnswer() {
+      if (!answerInput) return;
+      answerInput.style.height = "auto";
+      const newHeight = Math.max(120, answerInput.scrollHeight);
+      answerInput.style.height = newHeight + "px";
+    }
+
+    answerInput.addEventListener("input", autoResizeAnswer);
+    answerInput.addEventListener("change", autoResizeAnswer);
+
+    // Populate timer dropdowns
+    if (faqDays && faqDays.options.length === 0) {
+      for (let i = 0; i <= 30; i++) faqDays.add(new Option(i, i));
+      for (let i = 0; i <= 23; i++) faqHours.add(new Option(i, i));
+      for (let i = 0; i <= 59; i++) faqMins.add(new Option(i, i));
+      faqDays.value = "1";
+    }
+
+    // Toggle timer inputs when Infinite button is clicked
+    if (faqPermanent && faqDurationInputs) {
+      faqPermanent.addEventListener("click", () => {
+        const isCurrentlyActive = faqPermanent.classList.toggle("active");
+        if (isCurrentlyActive) {
+          faqDurationInputs.style.opacity = "0.5";
+          faqDays.disabled = true;
+          faqHours.disabled = true;
+          faqMins.disabled = true;
+        } else {
+          faqDurationInputs.style.opacity = "1";
+          faqDays.disabled = false;
+          faqHours.disabled = false;
+          faqMins.disabled = false;
+        }
+      });
+    }
+
+    // Toolbar formatting buttons
+    newFaqForm.querySelectorAll(".btn-toolbar").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tag = btn.getAttribute("data-tag");
+        const start = answerInput.selectionStart;
+        const end = answerInput.selectionEnd;
+        const selected = answerInput.value.substring(start, end);
+        let replacement = "";
+
+        switch (tag) {
+          case "bold":
+            replacement = `<strong>${selected || "bold text"}</strong>`;
+            break;
+          case "italic":
+            replacement = `<em>${selected || "italic text"}</em>`;
+            break;
+          case "code":
+            replacement = `<code>${selected || "code"}</code>`;
+            break;
+          case "link":
+            const url = prompt("Enter URL:", "https://");
+            if (url) {
+              replacement = `<a href="${url}" target="_blank">${selected || "Link text"}</a>`;
+            } else {
+              return;
+            }
+            break;
+          case "list":
+            if (selected) {
+              const items = selected
+                .split("\n")
+                .map((l) => (l.trim() ? `  <li>${l.trim()}</li>` : ""))
+                .filter(Boolean)
+                .join("\n");
+              replacement = `<ul>\n${items}\n</ul>`;
+            } else {
+              replacement = `<ul>\n  <li>Item 1</li>\n  <li>Item 2</li>\n</ul>`;
+            }
+            break;
+        }
+
+        answerInput.setRangeText(replacement, start, end, "end");
+        answerInput.focus();
+        autoResizeAnswer();
+      });
+    });
+
+    function renderFaqList() {
+      const faqs = window.MH_getFAQs
+        ? window.MH_getFAQs()
+        : window.FAQ_DATA || [];
+      if (faqCountEl) faqCountEl.textContent = faqs.length;
+
+      if (!faqs || faqs.length === 0) {
+        faqListEl.innerHTML = `<div class="status-msg-box status-msg-info">No FAQ questions configured.</div>`;
+        return;
+      }
+
+      faqListEl.innerHTML = "";
+      faqs.forEach((faq, index) => {
+        const div = document.createElement("div");
+        div.className = "faq-manage-item";
+
+        let expiryBadge = `<span class="text-xs" style="color: #8b949e;"><i class="fas fa-infinity"></i> Permanent</span>`;
+        if (faq.expires_at) {
+          const isExpired = new Date(faq.expires_at) < new Date();
+          const dateStr = new Date(faq.expires_at).toLocaleString();
+          expiryBadge = isExpired
+            ? `<span class="text-xs text-danger" style="font-weight: 600;"><i class="fas fa-clock"></i> Expired at ${dateStr}</span>`
+            : `<span class="text-xs" style="color: #e3b341; font-weight: 500;"><i class="fas fa-clock"></i> Expires: ${dateStr}</span>`;
+        }
+
+        const isActive = faq.is_active !== false;
+        let statusBadge = isActive
+          ? `<span class="text-xs" style="color: #3fb950; font-weight: 500; margin-right: 0.5rem;"><i class="fas fa-check-circle"></i> Active</span>`
+          : `<span class="text-xs" style="color: #f85149; font-weight: 500; margin-right: 0.5rem;"><i class="fas fa-ban"></i> Inactive</span>`;
+
+        div.innerHTML = `
+          <div class="faq-manage-body" style="${!isActive ? "opacity: 0.65;" : ""}">
+            <div class="faq-manage-question">${index + 1}. ${window.escapeHtml(faq.question)}</div>
+            <div style="margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              ${statusBadge}
+              ${expiryBadge}
+            </div>
+            <div class="faq-manage-answer-preview">${faq.answer}</div>
+          </div>
+          <div class="faq-manage-actions">
+            <label class="faq-toggle-switch" title="${isActive ? "Active (visible on site) — click to deactivate" : "Inactive (hidden on site) — click to activate"}">
+              <input type="checkbox" class="faq-toggle-input" ${isActive ? "checked" : ""} data-index="${index}">
+              <span class="faq-toggle-slider">
+                <i class="fas fa-check faq-toggle-icon-on"></i>
+                <i class="fas fa-times faq-toggle-icon-off"></i>
+              </span>
+            </label>
+            <button type="button" class="btn-secondary edit-faq-btn poll-action-btn-small" data-index="${index}" title="Edit question">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button type="button" class="btn-danger delete-faq-btn poll-action-btn-small" data-index="${index}" title="Delete question">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
+        `;
+
+        div.querySelector(".faq-toggle-input").addEventListener("change", async (e) => {
+          const newStatus = e.target.checked;
+          const currentFaqs = window.MH_getFAQs
+            ? window.MH_getFAQs()
+            : [...(window.FAQ_DATA || [])];
+          const targetFaq = currentFaqs[index];
+          targetFaq.is_active = newStatus;
+
+          if (supabase && targetFaq.id) {
+            try {
+              await supabase
+                .from("faqs")
+                .update({ is_active: newStatus, updated_at: new Date() })
+                .eq("id", targetFaq.id);
+            } catch (e) {}
+          }
+
+          if (window.MH_saveFAQs) window.MH_saveFAQs(currentFaqs);
+          showToast(newStatus ? "FAQ activated!" : "FAQ deactivated!");
+          renderFaqList();
+        });
+
+        div.querySelector(".edit-faq-btn").addEventListener("click", () => {
+          editIndexInput.value = index;
+          questionInput.value = faq.question;
+          answerInput.value = faq.answer;
+          submitText.textContent = "Update Question";
+          const icon = submitBtn.querySelector("i");
+          if (icon) icon.className = "fas fa-save";
+          cancelEditBtn.classList.remove("hidden");
+
+          // Restore timer state
+          if (faq.expires_at) {
+            const diffMs = new Date(faq.expires_at) - Date.now();
+            if (diffMs > 0) {
+              faqPermanent.classList.remove("active");
+              faqDurationInputs.style.opacity = "1";
+              faqDays.disabled = false;
+              faqHours.disabled = false;
+              faqMins.disabled = false;
+              const totalMins = Math.ceil(diffMs / 60000);
+              faqDays.value = Math.min(30, Math.floor(totalMins / (24 * 60)));
+              faqHours.value = Math.floor((totalMins % (24 * 60)) / 60);
+              faqMins.value = totalMins % 60;
+            } else {
+              faqPermanent.classList.remove("active");
+              faqDurationInputs.style.opacity = "1";
+              faqDays.disabled = false;
+              faqHours.disabled = false;
+              faqMins.disabled = false;
+              faqDays.value = "1";
+              faqHours.value = "0";
+              faqMins.value = "0";
+            }
+          } else {
+            faqPermanent.classList.add("active");
+            faqDurationInputs.style.opacity = "0.5";
+            faqDays.disabled = true;
+            faqHours.disabled = true;
+            faqMins.disabled = true;
+          }
+
+          newFaqForm.scrollIntoView({ behavior: "smooth", block: "center" });
+          questionInput.focus();
+          autoResizeAnswer();
+        });
+
+        div.querySelector(".delete-faq-btn").addEventListener("click", () => {
+          openCustomConfirm(`Delete FAQ: "${faq.question}"?`, async () => {
+            if (supabase && faq.id) {
+              try {
+                await supabase.from("faqs").delete().eq("id", faq.id);
+              } catch (e) {}
+            }
+            const currentFaqs = window.MH_getFAQs
+              ? window.MH_getFAQs()
+              : [...(window.FAQ_DATA || [])];
+            currentFaqs.splice(index, 1);
+            if (window.MH_saveFAQs) window.MH_saveFAQs(currentFaqs);
+            showToast("FAQ deleted successfully!");
+            if (parseInt(editIndexInput.value, 10) === index) {
+              resetForm();
+            }
+            renderFaqList();
+          });
+        });
+
+        faqListEl.appendChild(div);
+      });
+    }
+
+    function resetForm() {
+      newFaqForm.reset();
+      editIndexInput.value = "-1";
+      submitText.textContent = "Add Question";
+      const icon = submitBtn.querySelector("i");
+      if (icon) icon.className = "fas fa-plus";
+      cancelEditBtn.classList.add("hidden");
+
+      faqPermanent.classList.add("active");
+      faqDurationInputs.style.opacity = "0.5";
+      faqDays.disabled = true;
+      faqHours.disabled = true;
+      faqMins.disabled = true;
+      faqDays.value = "1";
+      faqHours.value = "0";
+      faqMins.value = "0";
+
+      if (answerInput) {
+        answerInput.style.height = "120px";
+      }
+    }
+
+    cancelEditBtn.addEventListener("click", () => {
+      resetForm();
+    });
+
+    resetDefaultsBtn.addEventListener("click", () => {
+      openCustomConfirm("Reset all FAQ questions back to default?", () => {
+        if (window.MH_resetFAQs) window.MH_resetFAQs();
+        resetForm();
+        renderFaqList();
+        showToast("FAQs reset to original defaults!");
+      });
+    });
+
+    newFaqForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const question = questionInput.value.trim();
+      const answer = answerInput.value.trim();
+      if (!question || !answer) return;
+
+      // Calculate expiration timer
+      let expiresAt = null;
+      if (!faqPermanent.classList.contains("active")) {
+        const d = parseInt(faqDays.value, 10) || 0;
+        const h = parseInt(faqHours.value, 10) || 0;
+        const m = parseInt(faqMins.value, 10) || 0;
+        const totalMs =
+          d * 24 * 60 * 60 * 1000 + h * 60 * 60 * 1000 + m * 60 * 1000;
+        if (totalMs > 0) {
+          expiresAt = new Date(Date.now() + totalMs).toISOString();
+        } else {
+          showToast(
+            "Duration must be greater than 0 if not Infinite.",
+            "error",
+          );
+          return;
+        }
+      }
+
+      const editIndex = parseInt(editIndexInput.value, 10);
+      const currentFaqs = window.MH_getFAQs
+        ? window.MH_getFAQs()
+        : [...(window.FAQ_DATA || [])];
+
+      if (editIndex >= 0 && editIndex < currentFaqs.length) {
+        const existingFaq = currentFaqs[editIndex];
+        currentFaqs[editIndex] = {
+          ...existingFaq,
+          question,
+          answer,
+          expires_at: expiresAt,
+        };
+        if (supabase && existingFaq.id) {
+          try {
+            await supabase
+              .from("faqs")
+              .update({
+                question,
+                answer,
+                expires_at: expiresAt,
+                updated_at: new Date(),
+              })
+              .eq("id", existingFaq.id);
+          } catch (e) {}
+        }
+        showToast("FAQ updated successfully!");
+      } else {
+        const newFaq = {
+          question,
+          answer,
+          expires_at: expiresAt,
+          display_order: currentFaqs.length + 1,
+        };
+        if (supabase) {
+          try {
+            const { data } = await supabase
+              .from("faqs")
+              .insert([newFaq])
+              .select();
+            if (data && data[0]) newFaq.id = data[0].id;
+          } catch (e) {}
+        }
+        currentFaqs.push(newFaq);
+        showToast("FAQ added successfully!");
+      }
+
+      if (window.MH_saveFAQs) window.MH_saveFAQs(currentFaqs);
+      resetForm();
+      renderFaqList();
+    });
+
+    async function loadFaqs() {
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from("faqs")
+            .select("id, question, answer, expires_at, display_order")
+            .order("display_order", { ascending: true })
+            .order("id", { ascending: true });
+          if (!error && Array.isArray(data) && data.length > 0) {
+            window.MH_saveFAQs(data);
+          }
+        } catch (e) {}
+      }
+      renderFaqList();
+    }
+
+    loadFaqs();
+    autoResizeAnswer();
+  }
 
 });

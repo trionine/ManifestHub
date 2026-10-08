@@ -299,6 +299,87 @@
       <div id="adminPollsList" class="admin-list-container mb-6">
         <div class="admin-list-empty">Loading polls...</div>
       </div>
+
+      <!-- Admin Panel FAQ Manager Section -->
+      <h2 class="section-heading admin-section-divider">
+        <i class="fas fa-question-circle"></i> FAQ Manager
+      </h2>
+
+      <div class="admin-form-card mb-6">
+        <form id="adminFaqForm">
+          <input type="hidden" id="faqEditIndex" value="-1" />
+          <div class="admin-input-group mb-3">
+            <label for="faqQuestionInput">Question</label>
+            <input
+              type="text"
+              id="faqQuestionInput"
+              placeholder="e.g., Does this work on Linux, Ubuntu, or the Steam Deck?"
+              class="admin-text-input w-full"
+              required
+            />
+          </div>
+          <div class="admin-input-group mb-3">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+              <label for="faqAnswerInput" style="margin-bottom: 0;">Answer</label>
+              <div class="faq-toolbar-btns">
+                <button type="button" class="btn-toolbar" data-tag="bold" title="Bold"><b>B</b></button>
+                <button type="button" class="btn-toolbar" data-tag="italic" title="Italic"><i>I</i></button>
+                <button type="button" class="btn-toolbar" data-tag="link" title="Link"><i class="fas fa-link"></i></button>
+                <button type="button" class="btn-toolbar" data-tag="code" title="Code"><i class="fas fa-code"></i></button>
+                <button type="button" class="btn-toolbar" data-tag="list" title="Bullet List"><i class="fas fa-list-ul"></i></button>
+              </div>
+            </div>
+            <textarea
+              id="faqAnswerInput"
+              rows="5"
+              placeholder="Enter detailed answer here (supports <strong>, <a>, <code>, <ul>)..."
+              class="admin-text-input w-full"
+              style="min-height: 120px; resize: vertical; font-family: inherit; line-height: 1.5; padding: 0.65rem; transition: height 0.1s ease-out;"
+              required
+            ></textarea>
+          </div>
+          <div class="admin-input-group mb-3">
+            <label class="admin-expiration-label">Expiration Timer</label>
+            <div class="admin-expiration-wrapper">
+              <div class="admin-expiration-capsule">
+                <button type="button" id="faqPermanent" class="admin-permanent-btn active" title="Infinite Expiration">∞</button>
+                <div class="admin-capsule-divider"></div>
+                <div id="faqDurationInputs" class="admin-duration-inputs" style="opacity: 0.5;">
+                  <label class="admin-select-label">
+                    <select id="faqDays" class="admin-capsule-select" disabled></select>d
+                  </label>
+                  <label class="admin-select-label">
+                    <select id="faqHours" class="admin-capsule-select" disabled></select>h
+                  </label>
+                  <label class="admin-select-label">
+                    <select id="faqMins" class="admin-capsule-select" disabled></select>m
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="flex-align-center-gap">
+              <button type="submit" id="faqSubmitBtn" class="btn-primary">
+                <i class="fas fa-plus"></i> <span id="faqSubmitText">Add Question</span>
+              </button>
+              <button type="button" id="faqCancelEditBtn" class="btn-secondary hidden">
+                Cancel
+              </button>
+            </div>
+            <button type="button" id="faqResetDefaultsBtn" class="btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;" title="Reset all FAQs back to standard defaults">
+              <i class="fas fa-undo"></i> Reset Defaults
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <h3 class="admin-section-subtitle text-light flex-align-center-gap">
+        <i class="fas fa-list-ul"></i> Managed Questions (<span id="faqCount">0</span>)
+      </h3>
+      <div id="adminFaqList" class="admin-list-container mb-6">
+        <div class="admin-list-empty">Loading questions...</div>
+      </div>
     </div>
   </main>
 
@@ -400,6 +481,8 @@
     crossorigin="anonymous"></script>
   <script src="/src/core/config.js" defer></script>
   <script src="/src/core/utils.js" defer></script>
+  <script src="/data/faq.js" defer></script>
+  <script src="/src/components/faq.js" defer></script>
   <script src="/src/pages/profile/index.js" defer></script>
 </body>
 

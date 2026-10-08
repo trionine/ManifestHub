@@ -225,6 +225,7 @@ window.MH_initAuth = function (supabase) {
           </div>
         </div>
       `;
+
       document.getElementById("userMenuBtn").addEventListener("click", (e) => {
         e.stopPropagation();
         document.getElementById("userDropdown").classList.toggle("hidden");

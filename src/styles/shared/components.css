@@ -31,7 +31,7 @@
   color: #58a6ff;
 }
 
-/* Warning Box (GAMES THAT WON'T WORK) */
+/* Warning & Notice Boxes (FAQ Notice & Denuvo DRM Alerts) */
 .warning-box {
   background: rgba(248, 81, 73, 0.05);
   border: 1px solid rgba(248, 81, 73, 0.2);
@@ -39,6 +39,14 @@
   border-radius: 8px;
   margin-bottom: 2rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.warning-box-no-margin {
+  margin-bottom: 0;
+}
+
+.denuvo-warning-wrap {
+  margin: 1rem 0 1.5rem 0;
 }
 
 .warning-title {
@@ -53,13 +61,24 @@
   letter-spacing: 0.05em;
 }
 
+.warning-title-margin {
+  margin-bottom: 0.5rem;
+}
+
+.warning-text {
+  font-size: 0.85rem;
+  color: #c9d1d9;
+  margin: 0;
+  line-height: 1.45;
+}
+
 .warning-list {
   list-style: none;
   padding: 0;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
 }
 
 .warning-list li {
@@ -1007,7 +1026,32 @@
 
 .admin-poll-actions {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.poll-edit-form-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.poll-edit-input {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  color: #c9d1d9;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.875rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.poll-edit-input:focus {
+  border-color: #58a6ff;
+  outline: none;
 }
 
 /* Homepage Poll Layout classes */
@@ -1162,25 +1206,7 @@
   margin: 0.25rem 0 0 0;
 }
 
-/* Denuvo warning classes */
-.denuvo-warning-wrap {
-  margin: 1rem 0 1.5rem 0;
-}
 
-.warning-box-no-margin {
-  margin-bottom: 0;
-}
-
-.warning-title-margin {
-  margin-bottom: 0.5rem;
-}
-
-.warning-text {
-  font-size: 0.85rem;
-  color: #c9d1d9;
-  margin: 0;
-  line-height: 1.45;
-}
 
 /* Profile Gate (Auth Screen) Classes */
 .profile-gate-wrap {
@@ -1598,8 +1624,15 @@
 }
 
 .ann-action-btn-small {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 28px;
+  padding: 0 0.45rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  line-height: 1;
 }
 
 .ann-edit-form-wrap {
@@ -1679,8 +1712,15 @@
 }
 
 .poll-action-btn-small {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 28px;
+  padding: 0 0.45rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  line-height: 1;
 }
 
 .announcement-item {
@@ -1699,4 +1739,199 @@
   height: 32px !important;
   padding: 0.15rem 0.5rem !important;
   gap: 0.5rem !important;
+}
+
+/* FAQ Manager Styles */
+.faq-manage-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  transition: border-color 0.2s;
+}
+
+.faq-manage-item:hover {
+  border-color: #58a6ff;
+}
+
+.faq-manage-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.faq-manage-question {
+  font-weight: 600;
+  color: #f0f6fc;
+  margin-bottom: 0.35rem;
+}
+
+.faq-manage-answer-preview {
+  font-size: 0.8rem;
+  color: #8b949e;
+  line-height: 1.45;
+  max-height: 4.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.faq-manage-answer-preview code {
+  background: rgba(110, 118, 129, 0.4);
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+}
+
+.faq-manage-answer-preview a {
+  color: #58a6ff;
+}
+
+.faq-manage-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.faq-toolbar-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.btn-toolbar {
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  border-radius: 4px;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 24px;
+  text-align: center;
+}
+
+.btn-toolbar:hover {
+  background: #30363d;
+  color: #58a6ff;
+  border-color: #8b949e;
+}
+
+/* Toggle Switch Component (Active / Inactive) */
+.admin-toggle-switch,
+.faq-toggle-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 50px;
+  height: 26px;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.admin-toggle-switch input,
+.faq-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.admin-toggle-slider,
+.faq-toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #282e38;
+  border: 1px solid #3d4450;
+  border-radius: 26px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  box-sizing: border-box;
+}
+
+/* White circular slider knob */
+.admin-toggle-slider::before,
+.faq-toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #f0f6fc;
+  border-radius: 50%;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+  z-index: 2;
+}
+
+/* Active State (Checked) */
+.admin-toggle-switch input:checked + .admin-toggle-slider,
+.faq-toggle-switch input:checked + .faq-toggle-slider {
+  background-color: #2ea043;
+  border-color: #3fb950;
+  box-shadow: 0 0 10px rgba(46, 160, 67, 0.35);
+}
+
+.admin-toggle-switch input:checked + .admin-toggle-slider::before,
+.faq-toggle-switch input:checked + .faq-toggle-slider::before {
+  transform: translateX(24px);
+}
+
+/* Icons inside the track */
+.admin-toggle-icon-on,
+.faq-toggle-icon-on {
+  font-size: 10px;
+  color: #ffffff;
+  font-weight: 900;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: all 0.2s ease;
+  z-index: 1;
+  margin-left: 1px;
+}
+
+.admin-toggle-icon-off,
+.faq-toggle-icon-off {
+  font-size: 10px;
+  color: #636e7b;
+  font-weight: 900;
+  opacity: 1;
+  transform: scale(1);
+  transition: all 0.2s ease;
+  z-index: 1;
+  margin-right: 1px;
+  margin-left: auto;
+}
+
+.admin-toggle-switch input:checked + .admin-toggle-slider .admin-toggle-icon-on,
+.faq-toggle-switch input:checked + .faq-toggle-slider .faq-toggle-icon-on {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.admin-toggle-switch input:checked + .admin-toggle-slider .admin-toggle-icon-off,
+.faq-toggle-switch input:checked + .faq-toggle-slider .faq-toggle-icon-off {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.admin-toggle-switch:hover .admin-toggle-slider,
+.faq-toggle-switch:hover .faq-toggle-slider {
+  filter: brightness(1.1);
 }

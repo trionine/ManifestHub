@@ -1,9 +1,11 @@
 /* ===== LAYOUT UTILITIES ===== */
 .page-wrapper {
+  width: 100%;
   max-width: 1200px;
   margin: 2rem auto;
   padding: 0 1rem;
   position: relative;
+  box-sizing: border-box;
 }
 
 .header-center {
@@ -855,7 +857,8 @@
 
 @media (min-width: 1200px) {
   .main-content-column {
-    max-width: 750px;
+    max-width: 780px;
+    min-height: 720px;
   }
   
   .trending-sidebar-panel {
@@ -870,6 +873,7 @@
 @media (min-width: 1400px) {
   .main-content-column {
     max-width: 860px;
+    min-height: 720px;
   }
 }
 

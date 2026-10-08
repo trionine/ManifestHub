@@ -67,8 +67,10 @@ document.addEventListener("DOMContentLoaded", function () {
   // Search engine, game panel, downloads, legacy check
   window.MH_initSearch();
 
-  // FAQ accordion
-  window.MH_initFAQ();
+  // FAQ accordion (if container present on page)
+  if (typeof window.MH_initFAQ === "function" && document.getElementById("faqContainer")) {
+    window.MH_initFAQ();
+  }
 
   // Database initialization (triggers trending load internally)
   window.MH_initDatabase(supabase);
