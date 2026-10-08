@@ -1383,7 +1383,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         div.innerHTML = `
           <div class="faq-manage-body" style="${!isActive ? "opacity: 0.65;" : ""}">
-            <div class="faq-manage-question">${index + 1}. ${window.escapeHtml(faq.question)}</div>
+            <div class="faq-manage-question">${index + 1}. ${(window.escapeHtml ? window.escapeHtml(faq.question) : faq.question)}</div>
             <div style="margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
               ${statusBadge}
               ${expiryBadge}
@@ -1611,19 +1611,25 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     async function loadFaqs() {
+      // 1. Instant render so "Loading questions..." never hangs
+      renderFaqList();
+
+      // 2. Fetch latest data from Supabase
       if (supabase) {
         try {
           const { data, error } = await supabase
             .from("faqs")
-            .select("id, question, answer, expires_at, display_order")
+            .select("id, question, answer, expires_at, is_active, display_order")
             .order("display_order", { ascending: true })
             .order("id", { ascending: true });
           if (!error && Array.isArray(data) && data.length > 0) {
-            window.MH_saveFAQs(data);
+            if (window.MH_saveFAQs) window.MH_saveFAQs(data);
+            renderFaqList();
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn("Could not fetch FAQs from Supabase:", e);
+        }
       }
-      renderFaqList();
     }
 
     loadFaqs();
