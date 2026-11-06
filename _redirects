@@ -10,6 +10,7 @@ http://manifestluahub.netlify.app/* https://manifesthub.trionine.com/:splat  301
 /profile      /profile/ 301!
 /forum        /forum/   301!
 
-/TOST  /tost/ 301!
-/TOST/ /tost/ 301!
-/tost  /tost/ 301!
+/TOST   https://tost.trionine.com/ 301!
+/TOST/  https://tost.trionine.com/ 301!
+/tost   https://tost.trionine.com/ 301!
+/tost/* https://tost.trionine.com/:splat 301!

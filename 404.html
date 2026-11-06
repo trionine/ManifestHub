@@ -13,10 +13,8 @@
             window.location.pathname === "/tost" ||
             window.location.pathname === "/tost/";
 
-        if (normalizedPath === "/tost" && !isCanonicalTostPath) {
-            window.location.replace(
-                `/tost/${window.location.search}${window.location.hash}`,
-            );
+        if (normalizedPath === "/tost") {
+            window.location.replace(`https://tost.trionine.com/${window.location.search}${window.location.hash}`);
         }
     </script>
 
@@ -41,7 +39,7 @@
                     <i class="fa-solid fa-house" aria-hidden="true"></i>
                     <span>Home</span>
                 </a>
-                <a class="site-nav-action" href="/tost/">
+                <a class="site-nav-action" href="https://tost.trionine.com/">
                     <i class="fa-solid fa-download" aria-hidden="true"></i>
                     <span>TOST</span>
                 </a>
